@@ -188,6 +188,12 @@ public class BFS extends Application {
         removeRoute.setStyle("-fx-font-size: 16px; -fx-min-width: 250px;");
         removeRoute.setOnAction(e -> removeRoute());
 
+         Button viewGraphBtn = new Button("View Graph");
+        viewGraphBtn.setStyle("-fx-font-size: 16px; -fx-min-width: 250px;");
+        viewGraphBtn.setOnAction(e -> {
+        shortestPath.clear();
+        showGraphVisualization();
+    });
 
         menuBox.getChildren().addAll(
             title, 
@@ -196,7 +202,8 @@ public class BFS extends Application {
             addAirportBtn, 
             removeAirport, 
             addRoute, 
-            removeRoute
+            removeRoute,
+            viewGraphBtn 
         );
         root.setCenter(menuBox);
 
