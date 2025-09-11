@@ -330,7 +330,7 @@ public class BFS extends Application {
         line.setStrokeWidth(2);
 
         // Arrowhead size
-        double arrowLength = 20;
+        double arrowLength = 10;
         double arrowWidth = 10;
 
         // Calculate angle of line
