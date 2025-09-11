@@ -176,7 +176,28 @@ public class BFS extends Application {
         addAirportBtn.setStyle("-fx-font-size: 16px; -fx-min-width: 250px;");
         addAirportBtn.setOnAction(e -> addNewAirport());
 
-        menuBox.getChildren().addAll(title, flightRouteBtn, flightRouteBtn2, addAirportBtn);
+        Button removeAirport = new Button("Remove Airport");
+        removeAirport.setStyle("-fx-font-size: 16px; -fx-min-width: 250px;");
+        removeAirport.setOnAction(e -> removeAirport());
+
+        Button addRoute = new Button("Add New Flight Route");
+        addRoute.setStyle("-fx-font-size: 16px; -fx-min-width: 250px;");
+        addRoute.setOnAction(e -> addRoute());
+
+        Button removeRoute = new Button("Remove Flight Route");
+        removeRoute.setStyle("-fx-font-size: 16px; -fx-min-width: 250px;");
+        removeRoute.setOnAction(e -> removeRoute());
+
+
+        menuBox.getChildren().addAll(
+            title, 
+            flightRouteBtn, 
+            flightRouteBtn2, 
+            addAirportBtn, 
+            removeAirport, 
+            addRoute, 
+            removeRoute
+        );
         root.setCenter(menuBox);
 
         Scene scene = new Scene(root);
@@ -299,6 +320,14 @@ public class BFS extends Application {
         newPositions[cityPositions.length] = new double[]{x, y};
         cityPositions = newPositions;
 
+        String[][] newEdgeLabels = new String[vertices.length][vertices.length];
+        for (int i = 0; i < edgeLabels.length; i++) {
+            for (int j = 0; j < edgeLabels[i].length; j++) {
+                newEdgeLabels[i][j] = edgeLabels[i][j];
+            }
+        }
+        edgeLabels = newEdgeLabels;
+
         try {
             saveDataToFiles();
             System.out.println("Airport '" + airportName + "' added successfully at (" + x + ", " + y + ")");
@@ -308,6 +337,254 @@ public class BFS extends Application {
 
         showMainMenu();
     }
+
+    private void removeAirport() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Enter the name of the airport that needs to be removed: ");
+        String airportName = scanner.nextLine().trim();
+
+        // Step 1: Find the index of the airport
+        int removeIndex = -1;
+        for (int i = 0; i < vertices.length; i++) {
+            if (vertices[i].equalsIgnoreCase(airportName)) {
+                removeIndex = i;
+                break;
+            }
+        }
+
+        if (removeIndex == -1) {
+            System.out.println("Airport not found.");
+            return;
+        }
+
+        // Step 2: Remove the airport from vertices
+        String[] newVertices = new String[vertices.length - 1];
+        for (int i = 0, j = 0; i < vertices.length; i++) {
+            if (i != removeIndex) {
+                newVertices[j++] = vertices[i];
+            }
+        }
+        vertices = newVertices;
+
+        // Step 3: Remove from cityPositions
+        double[][] newPositions = new double[cityPositions.length - 1][2];
+        for (int i = 0, j = 0; i < cityPositions.length; i++) {
+            if (i != removeIndex) {
+                newPositions[j++] = cityPositions[i];
+            }
+        }
+        cityPositions = newPositions;
+
+        // Step 4: Remove associated edges
+        List<int[]> newEdgeList = new ArrayList<>();
+        List<double[]> newEdgeWeightList = new ArrayList<>();
+
+        for (int i = 0; i < edges.length; i++) {
+            int from = edges[i][0];
+            int to = edges[i][1];
+
+            // Skip any edge that involves the removed airport
+            if (from == removeIndex || to == removeIndex) continue;
+
+            // Adjust indices if needed
+            if (from > removeIndex) from--;
+            if (to > removeIndex) to--;
+
+            newEdgeList.add(new int[]{from, to});
+            newEdgeWeightList.add(edgeWeights[i]);
+        }
+
+        edges = newEdgeList.toArray(new int[0][]);
+        edgeWeights = newEdgeWeightList.toArray(new double[0][]);
+
+        // Step 5: Update edgeLabels matrix
+        edgeLabels = new String[vertices.length][vertices.length];
+        for (int i = 0; i < edges.length; i++) {
+            int from = edges[i][0];
+            int to = edges[i][1];
+            double time = edgeWeights[i][0];
+            double cost = edgeWeights[i][1];
+            edgeLabels[from][to] = (int) time + "min, RM" + (int) cost;
+        }
+
+        // Step 6: Save updated data to files
+        try {
+            saveDataToFiles();
+            saveEdgesToFile();  // Save the edges with updated routes
+            System.out.println("Airport '" + airportName + "' has been removed successfully.");
+        } catch (IOException e) {
+            System.out.println("Error saving updated data: " + e.getMessage());
+        }
+
+        // Return to main menu
+        showMainMenu();
+    }
+
+    private void addRoute() {
+        Scanner scanner = new Scanner(System.in);
+
+        // Step 1: Get airports
+        System.out.print("Enter the source airport name: ");
+        String sourceAirport = scanner.nextLine().trim();
+
+        System.out.print("Enter the destination airport name: ");
+        String destinationAirport = scanner.nextLine().trim();
+
+        // Validate airports
+        int sourceIndex = -1, destinationIndex = -1;
+        for (int i = 0; i < vertices.length; i++) {
+            if (vertices[i].equalsIgnoreCase(sourceAirport)) {
+                sourceIndex = i;
+            }
+            if (vertices[i].equalsIgnoreCase(destinationAirport)) {
+                destinationIndex = i;
+            }
+        }
+
+        if (sourceIndex == -1 || destinationIndex == -1) {
+            System.out.println("Error: One or both airport names are invalid.");
+            return;
+        }
+
+        // Step 2: Get time and cost
+        int time = -1;
+        while (time <= 0) {
+            System.out.print("Enter flight time in minutes (e.g., 50): ");
+            try {
+                time = Integer.parseInt(scanner.nextLine());
+                if (time <= 0) {
+                    System.out.println("Time must be greater than 0.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a number.");
+            }
+        }
+
+        int cost = -1;
+        while (cost <= 0) {
+            System.out.print("Enter flight cost in RM (e.g., 120): ");
+            try {
+                cost = Integer.parseInt(scanner.nextLine());
+                if (cost <= 0) {
+                    System.out.println("Cost must be greater than 0.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a number.");
+            }
+        }
+
+        // Step 3: Add edge to memory
+        List<int[]> edgeList = new ArrayList<>(Arrays.asList(edges));
+        edgeList.add(new int[]{sourceIndex, destinationIndex});
+        edges = edgeList.toArray(new int[0][]);
+
+        List<double[]> edgeWeightList = new ArrayList<>(Arrays.asList(edgeWeights));
+        edgeWeightList.add(new double[]{time, cost});
+        edgeWeights = edgeWeightList.toArray(new double[0][]);
+
+        // Update edgeLabels
+        edgeLabels[sourceIndex][destinationIndex] = time + "min, RM" + cost;
+
+        // Step 4: Save data back to edges.txt
+        try {
+            saveEdgesToFile();
+            System.out.println("Flight route added successfully: " +
+                    sourceAirport + " -> " + destinationAirport +
+                    " (" + time + "min, RM" + cost + ")");
+        } catch (IOException e) {
+            System.out.println("Error saving edge data: " + e.getMessage());
+        }
+
+        // Return to main menu
+        showMainMenu();
+    }
+
+    private void removeRoute() {
+        Scanner scanner = new Scanner(System.in);
+
+        // Step 1: Get source and destination airports
+        System.out.print("Enter the source airport name: ");
+        String sourceAirport = scanner.nextLine().trim();
+
+        System.out.print("Enter the destination airport name: ");
+        String destinationAirport = scanner.nextLine().trim();
+
+        // Step 2: Validate airport names
+        int sourceIndex = -1, destinationIndex = -1;
+        for (int i = 0; i < vertices.length; i++) {
+            if (vertices[i].equalsIgnoreCase(sourceAirport)) {
+                sourceIndex = i;
+            }
+            if (vertices[i].equalsIgnoreCase(destinationAirport)) {
+                destinationIndex = i;
+            }
+        }
+
+        if (sourceIndex == -1 || destinationIndex == -1) {
+            System.out.println("Error: One or both airport names are invalid.");
+            return;
+        }
+
+        // Step 3: Search for the edge to remove
+        List<int[]> updatedEdges = new ArrayList<>();
+        List<double[]> updatedWeights = new ArrayList<>();
+        boolean edgeFound = false;
+
+        for (int i = 0; i < edges.length; i++) {
+            int from = edges[i][0];
+            int to = edges[i][1];
+
+            // Skip the edge we want to remove
+            if (from == sourceIndex && to == destinationIndex) {
+                edgeFound = true;
+                continue;
+            }
+
+            updatedEdges.add(edges[i]);
+            updatedWeights.add(edgeWeights[i]);
+        }
+
+        if (!edgeFound) {
+            System.out.println("Error: No flight route found between " +
+                    sourceAirport + " and " + destinationAirport + ".");
+            return;
+        }
+
+        // Step 4: Update in-memory data
+        edges = updatedEdges.toArray(new int[0][]);
+        edgeWeights = updatedWeights.toArray(new double[0][]);
+
+        // Update edgeLabels matrix
+        edgeLabels[sourceIndex][destinationIndex] = null;
+
+        // Step 5: Save changes to file
+        try {
+            saveEdgesToFile();
+            System.out.println("Flight route removed successfully: " +
+                    sourceAirport + " -> " + destinationAirport);
+        } catch (IOException e) {
+            System.out.println("Error saving updated edges: " + e.getMessage());
+        }
+
+        // Return to main menu
+        showMainMenu();
+    }
+
+
+
+    private void saveEdgesToFile() throws IOException {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(EDGES_FILE))) {
+            for (int i = 0; i < edges.length; i++) {
+                int from = edges[i][0];
+                int to = edges[i][1];
+                double time = edgeWeights[i][0];
+                double cost = edgeWeights[i][1];
+                writer.println(from + "," + to + "," + (int) time + "," + (int) cost);
+            }
+        }
+    }
+
+
 
     private void saveDataToFiles() throws IOException {
         try (PrintWriter writer = new PrintWriter(new FileWriter(AIRPORTS_FILE))) {
