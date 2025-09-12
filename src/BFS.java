@@ -187,7 +187,10 @@ public class BFS extends Application {
         Button removeRoute = new Button("Remove Flight Route");
         removeRoute.setStyle("-fx-font-size: 16px; -fx-min-width: 250px;");
         removeRoute.setOnAction(e -> removeRoute());
-
+        
+        Button viewGraphBtn = new Button("View Graph");
+        viewGraphBtn .setStyle("-fx-font-size: 16px; -fx-min-width: 250px;");
+        viewGraphBtn .setOnAction(e -> showGraph());
 
         menuBox.getChildren().addAll(
             title, 
@@ -196,7 +199,8 @@ public class BFS extends Application {
             addAirportBtn, 
             removeAirport, 
             addRoute, 
-            removeRoute
+            removeRoute,
+            viewGraphBtn 
         );
         root.setCenter(menuBox);
 
@@ -590,7 +594,43 @@ public class BFS extends Application {
         }
     }
 
+    private void showGraph() {
+        BorderPane layout = new BorderPane();
+        Pane graphPane = new Pane();
+        layout.setCenter(graphPane);
 
+        Button backBtn = new Button("Back to Menu");
+        backBtn.setOnAction(e -> showMainMenu());
+        layout.setBottom(backBtn);
+
+        // --- Draw edges (no weights, just simple graph) ---
+        for (int[] edge : edges) {
+            int from = edge[0];
+            int to = edge[1];
+
+            double x1 = cityPositions[from][0];
+            double y1 = cityPositions[from][1];
+            double x2 = cityPositions[to][0];
+            double y2 = cityPositions[to][1];
+
+            Line line = new Line(x1, y1, x2, y2);
+            line.setStroke(Color.GRAY);
+            graphPane.getChildren().add(line);
+        }
+
+        // --- Draw nodes ---
+        for (int i = 0; i < vertices.length; i++) {
+            double x = cityPositions[i][0];
+            double y = cityPositions[i][1];
+            Circle circle = new Circle(x, y, 8, Color.LIGHTBLUE);
+            Text label = new Text(x - 20, y - 10, vertices[i]);
+            graphPane.getChildren().addAll(circle, label);
+        }
+
+        Scene scene = new Scene(layout, 800, 600);
+        primaryStage.setScene(scene);
+        primaryStage.setTitle("Unweighted Graph View");
+    }
 
     private void saveDataToFiles() throws IOException {
         try (PrintWriter writer = new PrintWriter(new FileWriter(AIRPORTS_FILE))) {
