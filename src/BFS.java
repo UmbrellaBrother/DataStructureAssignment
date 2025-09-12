@@ -208,6 +208,9 @@ public class BFS extends Application {
 
     private void runConsoleBFS() {
         Scanner scanner = new Scanner(System.in);
+
+        printAirportsTable();
+            
         System.out.print("\nEnter start city: ");
         startCity = scanner.nextLine();
         System.out.print("Enter destination city: ");
@@ -243,6 +246,9 @@ public class BFS extends Application {
 
     private void runConsoleDijkstra() {
         Scanner scanner = new Scanner(System.in);
+
+        printAirportsTable();
+
         System.out.print("\nEnter start city: ");
         startCity = scanner.nextLine();
         System.out.print("Enter destination city: ");
@@ -726,6 +732,15 @@ public class BFS extends Application {
         primaryStage.setTitle("Flight Route Visualization (Dijkstra)");
         primaryStage.show();
     }
+
+    private void printAirportsTable() {
+    System.out.println("\nAvailable Airports:");
+    System.out.println("----------------------------");
+    for (int i = 0; i < vertices.length; i++) {
+        System.out.printf("%-20s ", vertices[i]);
+    }
+    System.out.println("----------------------------");
+}
 
     public static void main(String[] args) {
         launch(args);
